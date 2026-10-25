@@ -1,5 +1,5 @@
 import os
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 import sqlite3
 
@@ -111,6 +111,7 @@ def _progress_for_student(db, student_id):
         ).fetchall()
     ]
     result = dict(row)
+    result["completed_books"] = result["completed_count"]
     result["level"] = level_for_points(result["points"])
     result["streak"] = calculate_streak(dates)
     result["badges"] = badges
@@ -233,7 +234,7 @@ def create_app(config=None):
             flash("No copy is currently available.", "error")
             return redirect(url_for("index"))
 
-        due_at = (datetime.utcnow() + timedelta(days=14)).replace(microsecond=0).isoformat(" ")
+        due_at = (datetime.now(UTC) + timedelta(days=14)).replace(microsecond=0).isoformat()
         try:
             with db:
                 db.execute(

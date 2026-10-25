@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gamified Library System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <p class="eyebrow">Student Reading Engagement</p>
+      <h1>Gamified Library System</h1>
+      <p>Record completed books, earn points and make reading progress visible.</p>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Log a completed book</h2>
+        <form action="{{ url_for('complete_book') }}" method="post">
+          <label>Student
+            <select name="student_id" required>
+              {% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Book
+            <select name="book_id" required>
+              {% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.points_value }} pts</option>{% endfor %}
+            </select>
+          </label>
+          <button type="submit">Award reading points</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <ol class="leaderboard">
+          {% for student in students %}
+          <li><span>{{ student.name }}</span><strong>{{ student.points }} pts</strong></li>
+          {% endfor %}
+        </ol>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Library catalogue</h2>
+      <div class="books">
+        {% for book in books %}
+        <article><h3>{{ book.title }}</h3><p>{{ book.author }}</p><small>{{ book.genre }} · {{ book.points_value }} pts</small></article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Recent reading activity</h2>
+      {% if activity %}
+      <ul class="activity">
+        {% for row in activity %}<li>{{ row.student_name }} completed <strong>{{ row.book_title }}</strong> (+{{ row.points_awarded }} pts)</li>{% endfor %}
+      </ul>
+      {% else %}<p>No activity yet. Log the first completed book.</p>{% endif %}
+    </section>
+  </main>
+</body>
+</html>

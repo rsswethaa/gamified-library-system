@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS student_badges;
 DROP TABLE IF EXISTS badges;
 DROP TABLE IF EXISTS loans;
 DROP TABLE IF EXISTS reading_activity;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS students;
 DROP TABLE IF EXISTS books;
 
@@ -9,6 +10,17 @@ CREATE TABLE students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'STUDENT')),
+    student_id INTEGER UNIQUE,
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CHECK ((role = 'ADMIN' AND student_id IS NULL) OR (role = 'STUDENT' AND student_id IS NOT NULL))
 );
 
 CREATE TABLE books (

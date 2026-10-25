@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gamified Library System — Live Demo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:#eef3f8;color:#142033}.shell{width:min(1120px,92%);margin:auto;padding:48px 0 64px}.top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px}.eyebrow{font-size:.75rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#60708a}h1{font-size:clamp(2.2rem,6vw,4rem);margin:.25rem 0 .6rem;line-height:1}.sub{font-size:1.05rem;color:#536179;max-width:650px}.badge{background:#dff8e8;color:#17633a;padding:9px 13px;border-radius:999px;font-size:.8rem;font-weight:800;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;border:1px solid #dfe6ef;border-radius:22px;padding:24px;box-shadow:0 18px 45px rgba(25,42,70,.08);margin-bottom:20px}h2{margin-top:0}label{display:block;font-weight:700;margin:14px 0 7px}select,button{width:100%;padding:13px 14px;border-radius:12px;border:1px solid #cbd5e1;font:inherit}button{margin-top:14px;border:0;background:#142033;color:#fff;font-weight:800;cursor:pointer}button:hover{transform:translateY(-1px)}.leader{list-style:none;padding:0;margin:0}.leader li{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1f5}.rank{display:flex;gap:10px;align-items:center}.dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#edf2f7;font-weight:800}.books{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.book{border:1px solid #e1e7ef;border-radius:16px;padding:18px;background:#fbfcfe}.book h3{margin:.2rem 0 .4rem;font-size:1rem}.muted{color:#68778f}.activity{margin:0;padding-left:22px}.activity li{padding:7px 0}.toast{position:fixed;right:20px;bottom:20px;background:#142033;color:white;padding:13px 16px;border-radius:12px;opacity:0;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:none}@media(max-width:760px){.grid{grid-template-columns:1fr}.books{grid-template-columns:1fr 1fr}.top{display:block}.badge{display:inline-block;margin-top:10px}}@media(max-width:480px){.books{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="shell">
+<div class="top"><div><div class="eyebrow">Student Reading Engagement</div><h1>Gamified Library System</h1><p class="sub">A portfolio reconstruction showing how a library can turn completed reading into visible progress, points and healthy competition.</p></div><span class="badge">Interactive demo</span></div>
+<section class="grid">
+<div class="card"><h2>Log a completed book</h2><label for="student">Student</label><select id="student"></select><label for="book">Book</label><select id="book"></select><button id="award">Award reading points</button><p class="muted">This browser demo mirrors the Flask + SQLite workflow in the repository.</p></div>
+<div class="card"><h2>Leaderboard</h2><ol class="leader" id="leader"></ol></div>
+</section>
+<section class="card"><h2>Library catalogue</h2><div class="books" id="books"></div></section>
+<section class="card"><h2>Recent reading activity</h2><ul class="activity" id="activity"><li class="muted">No activity yet. Log the first completed book.</li></ul></section>
+</main><div class="toast" id="toast">Points awarded</div>
+<script>
+const students=[{id:1,name:'Aarav',points:30},{id:2,name:'Meera',points:20},{id:3,name:'Liam',points:10}];
+const books=[{id:1,title:'The Alchemist',author:'Paulo Coelho',genre:'Fiction',points:10},{id:2,title:'Atomic Habits',author:'James Clear',genre:'Self Development',points:15},{id:3,title:'A Brief History of Time',author:'Stephen Hawking',genre:'Science',points:20},{id:4,title:'The Psychology of Money',author:'Morgan Housel',genre:'Finance',points:15}];
+const studentSel=document.querySelector('#student'),bookSel=document.querySelector('#book');
+students.forEach(s=>studentSel.add(new Option(s.name,s.id)));books.forEach(b=>bookSel.add(new Option(`${b.title} — ${b.points} pts`,b.id)));
+document.querySelector('#books').innerHTML=books.map(b=>`<article class="book"><h3>${b.title}</h3><div>${b.author}</div><small class="muted">${b.genre} · ${b.points} pts</small></article>`).join('');
+function renderLeader(){document.querySelector('#leader').innerHTML=[...students].sort((a,b)=>b.points-a.points).map((s,i)=>`<li><span class="rank"><span class="dot">${i+1}</span>${s.name}</span><strong>${s.points} pts</strong></li>`).join('')}
+renderLeader();
+document.querySelector('#award').onclick=()=>{const s=students.find(x=>x.id==studentSel.value),b=books.find(x=>x.id==bookSel.value);s.points+=b.points;renderLeader();const activity=document.querySelector('#activity');if(activity.querySelector('.muted'))activity.innerHTML='';activity.insertAdjacentHTML('afterbegin',`<li>${s.name} completed <strong>${b.title}</strong> (+${b.points} pts)</li>`);const t=document.querySelector('#toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1300)};
+</script>
+</body></html>

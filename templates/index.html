@@ -11,44 +11,73 @@
     <header>
       <p class="eyebrow">Student Reading Engagement</p>
       <h1>Gamified Library System</h1>
-      <p>Record completed books, earn points and make reading progress visible.</p>
+      <p>Borrow books, record unique completions, earn badges and build reading streaks.</p>
     </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<section class="card">{% for category, message in messages %}<p class="flash flash-{{ category }}">{{ message }}</p>{% endfor %}</section>{% endif %}
+    {% endwith %}
 
     <section class="grid">
       <div class="card">
         <h2>Log a completed book</h2>
         <form action="{{ url_for('complete_book') }}" method="post">
           <label>Student
-            <select name="student_id" required>
-              {% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}
-            </select>
+            <select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select>
           </label>
           <label>Book
-            <select name="book_id" required>
-              {% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.points_value }} pts</option>{% endfor %}
-            </select>
+            <select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.points_value }} pts</option>{% endfor %}</select>
           </label>
-          <button type="submit">Award reading points</button>
+          <button type="submit">Record completion</button>
         </form>
       </div>
 
       <div class="card">
-        <h2>Leaderboard</h2>
-        <ol class="leaderboard">
-          {% for student in students %}
-          <li><span>{{ student.name }}</span><strong>{{ student.points }} pts</strong></li>
-          {% endfor %}
-        </ol>
+        <h2>Borrow a book</h2>
+        <form action="{{ url_for('borrow_book') }}" method="post">
+          <label>Student
+            <select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select>
+          </label>
+          <label>Available title
+            <select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.available_copies }}/{{ book.total_copies }} available</option>{% endfor %}</select>
+          </label>
+          <button type="submit">Borrow for 14 days</button>
+        </form>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Leaderboard</h2>
+      <ol class="leaderboard">
+        {% for student in students %}
+        <li>
+          <span><strong>{{ student.name }}</strong><br><small>{{ student.level }} · {{ student.completed_count }} books · {{ student.streak }} day streak{% if student.badges %} · {{ student.badges|map(attribute='name')|join(', ') }}{% endif %}</small></span>
+          <strong>{{ student.points }} pts</strong>
+        </li>
+        {% endfor %}
+      </ol>
     </section>
 
     <section class="card">
       <h2>Library catalogue</h2>
       <div class="books">
         {% for book in books %}
-        <article><h3>{{ book.title }}</h3><p>{{ book.author }}</p><small>{{ book.genre }} · {{ book.points_value }} pts</small></article>
+        <article><h3>{{ book.title }}</h3><p>{{ book.author }}</p><small>{{ book.genre }} · {{ book.points_value }} pts · {{ book.available_copies }}/{{ book.total_copies }} available</small></article>
         {% endfor %}
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Active loans</h2>
+      {% if active_loans %}
+      <ul class="activity">
+        {% for loan in active_loans %}
+        <li>{{ loan.student_name }} borrowed <strong>{{ loan.book_title }}</strong> · due {{ loan.due_at }}
+          <form action="{{ url_for('return_book', loan_id=loan.id) }}" method="post" style="display:inline"><button type="submit">Return</button></form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p>No active loans.</p>{% endif %}
     </section>
 
     <section class="card">

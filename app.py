@@ -8,10 +8,25 @@ DATABASE = BASE_DIR / "library.db"
 app = Flask(__name__)
 
 
+def bootstrap_database(db):
+    """Create the demo schema and sample data when the database is empty."""
+    schema = (BASE_DIR / "schema.sql").read_text(encoding="utf-8")
+    seed = (BASE_DIR / "seed.sql").read_text(encoding="utf-8")
+    db.executescript(schema)
+    db.executescript(seed)
+    db.commit()
+
+
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
         g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
+        table_exists = g.db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='students'"
+        ).fetchone()
+        if table_exists is None:
+            bootstrap_database(g.db)
     return g.db
 
 
@@ -22,17 +37,9 @@ def close_db(exception=None):
         db.close()
 
 
-def execute_script(filename):
-    db = get_db()
-    with open(BASE_DIR / filename, "r", encoding="utf-8") as file:
-        db.executescript(file.read())
-    db.commit()
-
-
 @app.cli.command("init-db")
 def init_db_command():
-    execute_script("schema.sql")
-    execute_script("seed.sql")
+    bootstrap_database(get_db())
     print("Database initialised with sample data.")
 
 

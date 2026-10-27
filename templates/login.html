@@ -1,1 +1,45 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Library Login</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body><main class="container"><section class="card"><p class="eyebrow">Protected demo</p><h1>Library sign in</h1>{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<p class="flash flash-{{ category }}">{{ message }}</p>{% endfor %}{% endwith %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Username<input name="username" required></label><label>Password<input name="password" type="password" required></label><button type="submit">Sign in</button></form><p><small>Demo accounts: admin / admin-demo · aarav / student-demo. Change passwords via environment variables outside local demos.</small></p></section></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChapterQuest | Demo Access</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-visual">
+      <div class="brand-lockup"><span class="brand-mark">CQ</span><span>ChapterQuest</span></div>
+      <div class="hero-copy">
+        <span class="status-pill"><i></i> Interactive portfolio demo</span>
+        <p class="eyebrow">Student reading engagement</p>
+        <h1>Turn reading into visible progress.</h1>
+        <p class="lede">A gamified library platform that combines catalogue management, borrowing, reading streaks, points and badges in one student-friendly workflow.</p>
+      </div>
+      <div class="feature-strip">
+        <div><strong>Points</strong><span>reward completions</span></div>
+        <div><strong>Badges</strong><span>recognise milestones</span></div>
+        <div><strong>Streaks</strong><span>build consistency</span></div>
+      </div>
+    </section>
+
+    <section class="auth-card">
+      <div class="auth-card-head"><span class="mini-label">Choose a perspective</span><h2>Explore the product</h2><p>Use a demo role to see the system as an administrator or student.</p></div>
+      {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <div class="demo-roles">
+        <button class="role-card" type="button" onclick="fillDemo('aarav','student-demo')"><span class="role-icon">S</span><span><strong>Student view</strong><small>Borrow, complete & track progress</small></span><span class="arrow">→</span></button>
+        <button class="role-card" type="button" onclick="fillDemo('admin','admin-demo')"><span class="role-icon admin">A</span><span><strong>Admin view</strong><small>Manage the full engagement workflow</small></span><span class="arrow">→</span></button>
+      </div>
+      <div class="divider"><span>or sign in manually</span></div>
+      <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Username<input id="username" name="username" required autocomplete="username" placeholder="aarav"></label>
+        <label>Password<input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••••••"></label>
+        <button class="primary-btn" type="submit">Enter ChapterQuest <span>→</span></button>
+      </form>
+      <p class="microcopy">Demo credentials are public for portfolio review. The project uses SQLite, authenticated sessions and CSRF-protected state changes.</p>
+    </section>
+  </main>
+  <script>function fillDemo(user,pass){document.getElementById('username').value=user;document.getElementById('password').value=pass;document.getElementById('username').focus();}</script>
+</body>
+</html>

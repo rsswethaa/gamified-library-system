@@ -47,7 +47,7 @@ class LibraryAppTestCase(unittest.TestCase):
         self.assertEqual(self.client.get("/").status_code, 302)
         response = self.login()
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Gamified Library System", response.data)
+        self.assertIn(b"Make every chapter count", response.data)
         with sqlite3.connect(self.database) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM users").fetchone()[0], 2)
             columns = [row[1] for row in db.execute("PRAGMA table_info(students)")]

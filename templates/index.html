@@ -1,12 +1,99 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gamified Library System</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
-<body><main class="container">
-<header><p class="eyebrow">Student Reading Engagement</p><h1>Gamified Library System</h1><p>Borrow books, record unique completions, earn badges and build reading streaks.</p><p>Signed in as <strong>{{ current_user.username }}</strong> · {{ current_user.role }}</p><form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign out</button></form></header>
-{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<section class="card">{% for category,message in messages %}<p class="flash flash-{{ category }}">{{ message }}</p>{% endfor %}</section>{% endif %}{% endwith %}
-<section class="grid"><div class="card"><h2>Log a completed book</h2><form action="{{ url_for('complete_book') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Student<select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select></label><label>Book<select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.points_value }} pts</option>{% endfor %}</select></label><button type="submit">Record completion</button></form></div>
-<div class="card"><h2>Borrow a book</h2><form action="{{ url_for('borrow_book') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Student<select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select></label><label>Available title<select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.available_copies }}/{{ book.total_copies }} available</option>{% endfor %}</select></label><button type="submit">Borrow for 14 days</button></form></div></section>
-<section class="card"><h2>{% if current_user.role == 'ADMIN' %}Leaderboard{% else %}My progress{% endif %}</h2><ol class="leaderboard">{% for student in students %}<li><span><strong>{{ student.name }}</strong><br><small>{{ student.level }} · {{ student.completed_count }} books · {{ student.streak }} day streak{% if student.badges %} · {{ student.badges|map(attribute='name')|join(', ') }}{% endif %}</small></span><strong>{{ student.points }} pts</strong></li>{% endfor %}</ol></section>
-<section class="card"><h2>Library catalogue</h2><div class="books">{% for book in books %}<article><h3>{{ book.title }}</h3><p>{{ book.author }}</p><small>{{ book.genre }} · {{ book.points_value }} pts · {{ book.available_copies }}/{{ book.total_copies }} available</small></article>{% endfor %}</div></section>
-<section class="card"><h2>Active loans</h2>{% if active_loans %}<ul class="activity">{% for loan in active_loans %}<li>{{ loan.student_name }} borrowed <strong>{{ loan.book_title }}</strong> · due {{ loan.due_at }} <form action="{{ url_for('return_book', loan_id=loan.id) }}" method="post" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Return</button></form></li>{% endfor %}</ul>{% else %}<p>No active loans.</p>{% endif %}</section>
-<section class="card"><h2>Recent reading activity</h2>{% if activity %}<ul class="activity">{% for row in activity %}<li>{{ row.student_name }} completed <strong>{{ row.book_title }}</strong> (+{{ row.points_awarded }} pts)</li>{% endfor %}</ul>{% else %}<p>No activity yet.</p>{% endif %}</section>
-</main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChapterQuest | Reading Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="topbar">
+      <div class="brand-lockup"><span class="brand-mark">CQ</span><span>ChapterQuest</span></div>
+      <div class="nav-actions">
+        <span class="status-pill"><i></i> Demo live</span>
+        <span class="user-chip">{{ current_user.username }} · {{ current_user.role }}</span>
+        <form action="{{ url_for('logout') }}" method="post" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="ghost-btn" type="submit">Sign out</button></form>
+      </div>
+    </nav>
+
+    <main class="page-wrap">
+      <section class="dashboard-hero">
+        <div>
+          <p class="eyebrow">Reading engagement platform</p>
+          <h1>Make every chapter count.</h1>
+          <p class="lede">Borrow books, record completions and turn reading activity into points, streaks, badges and visible progress.</p>
+        </div>
+        <div class="hero-orbit">
+          <div class="orbit-score"><span>Top score</span><strong>{% if students %}{{ students[0].points }}{% else %}0{% endif %}</strong><small>points in current view</small></div>
+        </div>
+      </section>
+
+      {% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<section class="flash-stack">{% for category,message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}</section>{% endif %}{% endwith %}
+
+      <section class="kpi-grid">
+        <article class="kpi"><span>Catalogue</span><strong>{{ books|length }}</strong><small>titles available in demo</small></article>
+        <article class="kpi"><span>{% if current_user.role == 'ADMIN' %}Learners{% else %}Profile{% endif %}</span><strong>{{ students|length }}</strong><small>{% if current_user.role == 'ADMIN' %}tracked readers{% else %}active student{% endif %}</small></article>
+        <article class="kpi"><span>Active loans</span><strong>{{ active_loans|length }}</strong><small>currently borrowed</small></article>
+        <article class="kpi accent-kpi"><span>Recent activity</span><strong>{{ activity|length }}</strong><small>latest reading events</small></article>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="panel action-panel">
+          <div class="panel-head"><div><span class="mini-label">Reading activity</span><h2>Record a completed book</h2></div><span class="step-chip">+ points</span></div>
+          <p class="panel-copy">Completions are unique per student and automatically update points, levels and eligible badges.</p>
+          <form action="{{ url_for('complete_book') }}" method="post" class="action-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label>Student<select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select></label>
+            <label>Book<select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.points_value }} pts</option>{% endfor %}</select></label>
+            <button class="primary-btn" type="submit">Record completion <span>→</span></button>
+          </form>
+        </article>
+
+        <article class="panel action-panel">
+          <div class="panel-head"><div><span class="mini-label">Library workflow</span><h2>Borrow a book</h2></div><span class="step-chip secondary">14 days</span></div>
+          <p class="panel-copy">Borrowing updates inventory immediately and creates a due date so availability stays visible.</p>
+          <form action="{{ url_for('borrow_book') }}" method="post" class="action-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label>Student<select name="student_id" required>{% for student in students %}<option value="{{ student.id }}">{{ student.name }}</option>{% endfor %}</select></label>
+            <label>Available title<select name="book_id" required>{% for book in books %}<option value="{{ book.id }}">{{ book.title }} — {{ book.available_copies }}/{{ book.total_copies }} available</option>{% endfor %}</select></label>
+            <button class="secondary-btn" type="submit">Create loan <span>→</span></button>
+          </form>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel leaderboard-panel">
+          <div class="panel-head"><div><span class="mini-label">Progress engine</span><h2>{% if current_user.role == 'ADMIN' %}Leaderboard{% else %}My progress{% endif %}</h2></div><span class="step-chip">Live</span></div>
+          <div class="leaderboard">
+            {% for student in students %}
+            <div class="leader-row">
+              <span class="rank">{{ loop.index }}</span>
+              <div class="learner"><strong>{{ student.name }}</strong><small>{{ student.level }} · {{ student.completed_count }} books · {{ student.streak }} day streak</small>{% if student.badges %}<div class="badge-row">{% for badge in student.badges %}<span>{{ badge.name }}</span>{% endfor %}</div>{% endif %}</div>
+              <div class="points"><strong>{{ student.points }}</strong><small>pts</small></div>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="panel loans-panel">
+          <div class="panel-head"><div><span class="mini-label">Circulation</span><h2>Active loans</h2></div><span class="step-chip secondary">{{ active_loans|length }}</span></div>
+          {% if active_loans %}<div class="loan-list">{% for loan in active_loans %}<div class="loan-row"><div><strong>{{ loan.book_title }}</strong><small>{{ loan.student_name }} · due {{ loan.due_at }}</small></div><form action="{{ url_for('return_book', loan_id=loan.id) }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="compact-btn" type="submit">Return</button></form></div>{% endfor %}</div>{% else %}<div class="empty-state"><strong>No active loans</strong><span>Borrow a title above to start the circulation workflow.</span></div>{% endif %}
+        </article>
+      </section>
+
+      <section class="panel catalogue-panel">
+        <div class="panel-head"><div><span class="mini-label">Discover</span><h2>Library catalogue</h2></div><span class="step-chip">{{ books|length }} titles</span></div>
+        <div class="books">{% for book in books %}<article class="book-card"><div class="book-cover"><span>{{ book.genre[:1] }}</span></div><div><h3>{{ book.title }}</h3><p>{{ book.author }}</p><div class="book-meta"><span>{{ book.genre }}</span><span>{{ book.points_value }} pts</span><span>{{ book.available_copies }}/{{ book.total_copies }} available</span></div></div></article>{% endfor %}</div>
+      </section>
+
+      <section class="panel activity-panel">
+        <div class="panel-head"><div><span class="mini-label">Momentum</span><h2>Recent reading activity</h2></div><span class="step-chip secondary">Latest</span></div>
+        {% if activity %}<div class="timeline">{% for row in activity %}<div class="timeline-row"><span class="timeline-dot"></span><div><strong>{{ row.student_name }}</strong> completed <strong>{{ row.book_title }}</strong><small>+{{ row.points_awarded }} points awarded</small></div></div>{% endfor %}</div>{% else %}<div class="empty-state"><strong>No activity yet</strong><span>Record a completion to create the first event.</span></div>{% endif %}
+      </section>
+
+      <footer class="product-footer"><span>ChapterQuest · portfolio reconstruction</span><span>Flask · SQLite · HTML/CSS · GitHub Actions</span></footer>
+    </main>
+  </div>
+</body>
+</html>
